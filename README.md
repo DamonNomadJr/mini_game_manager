@@ -2,10 +2,7 @@
 
 Mini Game Manager for games that don't come on your favorite platforms such as steam or origin. The focus of this app is to create a game manager that works on Windows and enables users to import games from itch.io or Patreon and manage them from one software.
 
-<<<<<<< HEAD
 ![version_1.1.0_demo](https://github.com/DamonNomadJr/mini_game_manager/blob/main/.docs/version_1.1.0_demo.gif)
-=======
->>>>>>> main
 # Compiling it yourself
 There are still a lot of known issues while working with Flutter version 2.10.3. You can download the repo and initialize it using Flutter and attempt running it using the Windows 10/11 SDKs provided by Visual Studio (not VS Code). But I haven't attempted to run or had anyone to run it on another PC. Knowing how many issues I had it is still buggy. If you can't solve the issue let me know and I may be able to help.
 
