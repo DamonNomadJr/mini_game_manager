@@ -32,5 +32,7 @@ A quick break down of the versions, and what they implement:
 # Support
 You can support me by watching or subscribing to my GitHub. Downloading this project will forever be FREE!
 
+[![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/donate/?business=BP3S4LBSAAPSG&no_recurring=0&item_name=Thank+you+for+your+donation.+You+inspire+me+to+move+forward+with+my+projects+and+ideas+and+make+me+go+a+long+way.&currency_code=CAD)
+
 # Participation
 If you are intersted to participate by creating features, and additions, or know how to implement custom plugins, feel free to contact me. This is an opensource project created on Flutter.
