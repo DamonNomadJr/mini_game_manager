@@ -1,4 +1,7 @@
 import 'dart:io';
+import 'package:flutter/gestures.dart';
+import 'package:mini_game_manager/game_view.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:window_size/window_size.dart';
 
 import 'package:provider/provider.dart';
@@ -7,13 +10,14 @@ import 'package:mini_game_manager/modules/file_management.dart';
 import 'package:mini_game_manager/providers/application_settings.dart';
 import 'package:mini_game_manager/providers/game_data.dart';
 
+import 'cards.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     setWindowTitle('Mini Game Manager');
-    setWindowMinSize(const Size(400, 300));
+    setWindowMinSize(const Size(800, 600));
     setWindowMaxSize((await getCurrentScreen())!.frame.size);
-    // setWindowMaxSize(Size.infinite);
   }
   runApp(const MyApp());
 }
@@ -59,284 +63,53 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   String file_path = "";
-  List<String> myProducts = [];
   late GameData games;
+  late String _searchText = "";
+
   List<Widget> buildList() {
     List<Widget> list = [];
     games.data.forEach((key, value) {
-      list.add(Cards(
-        onRun: () => Process.run(value["game_path"], []),
-        imageIcon: value["game_icon"],
-        name: value["game_name"],
-        onSettings: () => changeGameData(
-            key, value, () => Process.run(value["game_path"], [])),
-      ));
+      if (_searchText == "" || _searchText.isEmpty) {
+        list.add(Cards(
+          onRun: () => Process.run(value["game_path"], []),
+          imageIcon: value["game_icon"],
+          name: value["game_name"],
+          onSettings: () => openGameDetailView(
+              key, value, () => Process.run(value["game_path"], [])),
+        ));
+      } else {
+        if ((value["game_name"] as String)
+                .toLowerCase()
+                .contains(_searchText.toLowerCase()) ||
+            (value["game_tags"].toString())
+                .toLowerCase()
+                .contains(_searchText.toLowerCase())) {
+          list.add(Cards(
+            onRun: () => Process.run(value["game_path"], []),
+            imageIcon: value["game_icon"],
+            name: value["game_name"],
+            onSettings: () => openGameDetailView(
+                key, value, () => Process.run(value["game_path"], [])),
+          ));
+        }
+      }
     });
     return list;
   }
 
-  changeGameData(String reference, Map<String, dynamic> data, Function onRun) {
-    final _formKey = GlobalKey<FormState>();
-    TextEditingController _name =
-        TextEditingController(text: data["game_name"]);
-    TextEditingController _path =
-        TextEditingController(text: data["game_path"]);
-    TextEditingController _image =
-        TextEditingController(text: data["game_icon"]);
+  openGameDetailView(
+      String reference, Map<String, dynamic> data, Function onRun) {
     showModalBottomSheet(
-      backgroundColor: Color.fromARGB(255, 75, 75, 75),
+      elevation: 1,
+      // backgroundColor: const Color.fromARGB(255, 75, 75, 75),
+      isDismissible: false,
       isScrollControlled: true,
       context: context,
-      builder: (_) => SizedBox(
-        width: 800,
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Stack(
-                children: [
-                  SizedBox(
-                    width: double.infinity,
-                    height: MediaQuery.of(context).size.height / 3,
-                    child: (data["game_icon"]!.contains("http"))
-                        ? Image.network(
-                            data["game_icon"]!,
-                            alignment: Alignment.topCenter,
-                            fit: BoxFit.cover,
-                          )
-                        : Image.network(
-                            "https://s3.envato.com/files/1a8011a5-217f-4a8a-9618-c2ddefbe08e3/inline_image_preview.jpg",
-                            alignment: Alignment.center,
-                            fit: BoxFit.cover,
-                          ),
-                  ),
-                  Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Color.fromARGB(100, 0, 0, 0),
-                          Color.fromARGB(255, 75, 75, 75),
-                        ],
-                      ),
-                    ),
-                    width: double.infinity,
-                    height: MediaQuery.of(context).size.height / 3,
-                  ),
-                  Positioned(
-                      top: 10,
-                      left: 10,
-                      child: IconButton(
-                          iconSize: 30,
-                          color: Colors.white,
-                          onPressed: () => Navigator.pop(context),
-                          icon: Icon(Icons.close)))
-                ],
-              ),
-              Container(
-                padding: EdgeInsets.all(10),
-                child: Row(
-                  children: [
-                    TextButton(
-                      style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.all(
-                            Color.fromARGB(255, 255, 65, 51)),
-                        foregroundColor: MaterialStateProperty.all(
-                            Color.fromARGB(255, 255, 255, 255)),
-                        padding: MaterialStateProperty.all(
-                            const EdgeInsets.fromLTRB(30, 20, 30, 20)),
-                      ),
-                      onPressed: () async {
-                        await games.removeData(reference);
-                        Navigator.pop(context);
-                      },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: const [
-                          Icon(Icons.close),
-                          Padding(padding: EdgeInsets.all(5)),
-                          Text("Remove game"),
-                        ],
-                      ),
-                    ),
-                    const Padding(padding: EdgeInsets.all(5)),
-                    TextButton(
-                      style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.all(
-                            Color.fromARGB(255, 13, 158, 25)),
-                        foregroundColor: MaterialStateProperty.all(
-                            Color.fromARGB(255, 255, 255, 255)),
-                        padding: MaterialStateProperty.all(
-                            const EdgeInsets.fromLTRB(30, 20, 30, 20)),
-                      ),
-                      onPressed: () async {
-                        onRun();
-                      },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: const [
-                          Icon(Icons.play_arrow),
-                          Padding(padding: EdgeInsets.all(5)),
-                          Text("Run Game"),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextFormField(
-                      style: const TextStyle(
-                        color: Colors.white,
-                        decorationColor: Colors.white,
-                      ),
-                      cursorColor: Colors.white,
-                      decoration: const InputDecoration(
-                        label: Text(
-                          "Game Name",
-                          style: TextStyle(
-                            color: Colors.white,
-                          ),
-                        ),
-                        border: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                      ),
-                      controller: _name,
-                    ),
-                    const Padding(padding: EdgeInsets.all(5)),
-                    TextFormField(
-                      style: const TextStyle(
-                        color: Colors.white,
-                        decorationColor: Colors.white,
-                      ),
-                      cursorColor: Colors.white,
-                      decoration: const InputDecoration(
-                        label: Text(
-                          "Game Path",
-                          style: TextStyle(
-                            color: Colors.white,
-                          ),
-                        ),
-                        border: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                      ),
-                      controller: _path,
-                      readOnly: true,
-                      onTap: () async {
-                        _path.text = await pickFile() ?? _path.text;
-                      },
-                    ),
-                    const Padding(padding: EdgeInsets.all(5)),
-                    TextFormField(
-                      style: const TextStyle(
-                        color: Colors.white,
-                        decorationColor: Colors.white,
-                      ),
-                      cursorColor: Colors.white,
-                      decoration: const InputDecoration(
-                        label: Text(
-                          "Background URL",
-                          style: TextStyle(
-                            color: Colors.white,
-                          ),
-                        ),
-                        border: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                      ),
-                      controller: _image,
-                      validator: (value) {
-                        if (value == null ||
-                            value.isEmpty ||
-                            !(value.contains('http') &&
-                                (value.contains('.png') ||
-                                    value.contains('.jpg')))) {
-                          return 'This is not a valid image url';
-                        }
-                        return null;
-                      },
-                    ),
-                    const Padding(padding: EdgeInsets.all(5)),
-                    Text(data["game_tags"].toString()),
-                    const Padding(padding: EdgeInsets.all(5)),
-                    TextButton(
-                      onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          Map<String, dynamic> updates = {
-                            "game_name": _name.text,
-                            "game_icon": _image.text,
-                            "game_path": _path.text,
-                            "game_tags": data["game_tags"]
-                          };
-                          games.updateData(reference, updates);
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Saving Data'),
-                            ),
-                          );
-                        }
-                      },
-                      style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.all(
-                            const Color.fromARGB(255, 31, 31, 31)),
-                        foregroundColor: MaterialStateProperty.all(
-                            const Color.fromARGB(255, 255, 255, 255)),
-                        padding: MaterialStateProperty.all(
-                            const EdgeInsets.fromLTRB(20, 20, 20, 20)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          Icon(Icons.refresh),
-                          Padding(padding: EdgeInsets.all(5)),
-                          Text("Update Game Info"),
-                        ],
-                      ),
-                    )
-                  ],
-                ),
-              ),
-            ],
-          ),
+      builder: (_) => Scaffold(
+        backgroundColor: const Color.fromARGB(255, 75, 75, 75),
+        body: GameView(
+          reference: reference,
+          currentGameData: data,
         ),
       ),
     );
@@ -349,139 +122,105 @@ class _MyHomePageState extends State<MyHomePage> {
     var settings = Provider.of<ApplicationSettings>(context);
     games = Provider.of<GameData>(context);
     return Scaffold(
-      body: SizedBox(
-        height: MediaQuery.of(context).size.height,
-        width: MediaQuery.of(context).size.width,
-        child: Stack(
-          children: [
-            GridView(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: width > 2000
-                      ? 8
-                      : width > 1000
-                          ? 6
-                          : width > 500
-                              ? 4
-                              : 2,
-                  childAspectRatio: height > 500 ? 0.8 : 0.4,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 20),
-              shrinkWrap: true,
-              children: buildList(),
-            ),
-            Positioned(
-              bottom: 0,
-              child: Row(
-                children: [
-                  Text(
-                      "Game Directory: \"${settings.data["games_directory"]}\""),
-                  TextButton(
-                    onPressed: () async {
-                      settings.setGameDirectory(await pickFolder());
-                    },
-                    child: Text("UPDATE IT"),
-                  ),
-                  Text(file_path),
-                  TextButton(
-                    onPressed: () async {
-                      var path = await pickFile();
-                      if (path != null) games.addData(path.toString(), []);
-                    },
-                    child: const Text("Add Games"),
-                  ),
-                ],
-              ),
-            )
-          ],
-        ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.grey,
+        onPressed: () async {
+          var path = await pickFile();
+          if (path != null) games.addData(path.toString(), []);
+        },
+        child: const Icon(Icons.add),
       ),
-    );
-  }
-}
-
-class Cards extends StatelessWidget {
-  // late String? backgroundImage;
-  final String name;
-  final String? imageIcon;
-  final Function onSettings;
-  final Function onRun;
-  const Cards({
-    Key? key,
-    required this.name,
-    required this.imageIcon,
-    required this.onSettings,
-    required this.onRun,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () => onSettings(),
-        child: SizedBox(
-          height: 300,
-          child: Stack(
+      body: Stack(
+        children: [
+          Column(
+            mainAxisSize: MainAxisSize.max,
             children: [
-              if (imageIcon != null)
-                SizedBox(
-                    width: double.infinity,
-                    height: double.infinity,
-                    child: (imageIcon!.contains("http"))
-                        ? Image.network(
-                            imageIcon!,
-                            alignment: Alignment.center,
-                            fit: BoxFit.cover,
-                          )
-                        : Image.network(
-                            "https://s3.envato.com/files/1a8011a5-217f-4a8a-9618-c2ddefbe08e3/inline_image_preview.jpg",
-                            alignment: Alignment.center,
-                            fit: BoxFit.cover,
-                          )),
               Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Color.fromARGB(75, 0, 0, 0),
-                      Color.fromARGB(255, 75, 75, 75),
-                    ],
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.only(left: 10, right: 10),
-                alignment: Alignment.bottomCenter,
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    FittedBox(
-                      fit: BoxFit.contain,
-                      child: Text(
-                        name,
-                        style: TextStyle(color: Colors.white, fontSize: 20),
+                    Form(
+                      child: Expanded(
+                        child: TextFormField(
+                          decoration: const InputDecoration(
+                            icon: Icon(Icons.search),
+                            label: Text("Search"),
+                            border: InputBorder.none,
+                          ),
+                          onChanged: (input) {
+                            setState(() {
+                              _searchText = input;
+                            });
+                          },
+                        ),
                       ),
                     ),
-                    IconButton(
-                      enableFeedback: false,
-                      iconSize: 30,
-                      color: Color.fromARGB(255, 13, 158, 25),
-                      focusColor: Colors.transparent,
-                      hoverColor: Colors.transparent,
-                      splashColor: Colors.transparent,
-                      highlightColor: Colors.transparent,
-                      onPressed: () {
-                        onRun();
-                      },
-                      icon: const Icon(Icons.play_arrow),
-                    ),
                   ],
+                ),
+              ),
+              Expanded(
+                child: GridView(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: width > 2000
+                        ? 8
+                        : width > 1000
+                            ? 6
+                            : width > 500
+                                ? 4
+                                : 2,
+                    childAspectRatio: height > 500 ? 0.8 : 0.4,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  shrinkWrap: true,
+                  children: buildList(),
+                ),
+              ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+                  color: Colors.black,
+                  child: Row(
+                    children: [
+                      // Text(
+                      //     "Game Directory: \"${settings.data["games_directory"]}\""),
+                      // TextButton(
+                      //   onPressed: () async {
+                      //     settings.setGameDirectory(await pickFolder());
+                      //   },
+                      //   child: const Text("UPDATE IT"),
+                      // ),
+                      // Text(file_path),
+                      RichText(
+                        text: TextSpan(children: [
+                          const TextSpan(
+                            text: 'Check the latest version on ',
+                            style: TextStyle(),
+                          ),
+                          TextSpan(
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () async {
+                                await launch(
+                                    "https://github.com/DamonNomadJr/mini_game_manager");
+                              },
+                            text: 'Github',
+                            style: const TextStyle(
+                              color: Colors.blue,
+                              decoration: TextDecoration.underline,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ]),
+                      )
+                    ],
+                  ),
                 ),
               )
             ],
           ),
-        ),
+        ],
       ),
     );
   }
