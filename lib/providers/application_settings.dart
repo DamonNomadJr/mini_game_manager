@@ -1,19 +1,33 @@
 import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'dart:convert';
-
+import 'package:mini_game_manager/modules/colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+enum gameLibraryView {
+  gridView,
+  comfyView,
+  listView,
+}
 
 class ApplicationSettings with ChangeNotifier {
   // path to local directory:
   static String home = "";
   late final String _settings = "settings.json";
+  late gameLibraryView libraryView;
+  late SharedPreferences _prefs;
   Map<String, dynamic> data = {};
 
-  init() async {
-    String os = Platform.operatingSystem;
+  Map<String, ColorPallet> colorThemes = {
+    "Default": DefaultColorPallet(),
+  };
 
+  ColorPallet activeColorTheme = DefaultColorPallet();
+
+  init() async {
+    libraryView = gameLibraryView.gridView;
     Map<String, String> envVars = Platform.environment;
+    _prefs = await SharedPreferences.getInstance();
     if (Platform.isMacOS) {
       home = envVars['HOME']!;
     } else if (Platform.isLinux) {
@@ -21,19 +35,17 @@ class ApplicationSettings with ChangeNotifier {
     } else if (Platform.isWindows) {
       home = envVars['UserProfile']!;
     }
-    print(home);
 
     home = home + "/AppData/Local/Mini Game Manager/";
     Directory(home).create(recursive: true);
     bool check = await File(home + _settings).exists();
 
     if (!check) {
-      print("didnt find");
       File(home + _settings).writeAsString("");
     } else {
-      print("did find");
       await loadSettings();
     }
+    getLibraryView();
   }
 
   void saveSettings() async {
@@ -42,12 +54,25 @@ class ApplicationSettings with ChangeNotifier {
   }
 
   Future<void> loadSettings() async {
-    this.data = json.decode(await File(home + _settings).readAsString());
+    data = json.decode(await File(home + _settings).readAsString());
     notifyListeners();
   }
 
   void setGameDirectory(String input) {
     data["games_directory"] = input;
     saveSettings();
+  }
+
+  setLibraryView(gameLibraryView view) async {
+    libraryView = view;
+    await _prefs.setString("libraryView", view.toString());
+    notifyListeners();
+  }
+
+  void getLibraryView() {
+    libraryView = gameLibraryView.values.firstWhere(
+        (element) => element.toString() == _prefs.getString("libraryView"),
+        orElse: () => gameLibraryView.gridView);
+    notifyListeners();
   }
 }

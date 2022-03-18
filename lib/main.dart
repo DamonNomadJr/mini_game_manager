@@ -1,16 +1,16 @@
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
-import 'package:mini_game_manager/game_view.dart';
+
+import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:window_size/window_size.dart';
-
 import 'package:provider/provider.dart';
-import 'package:flutter/material.dart';
-import 'package:mini_game_manager/modules/file_management.dart';
+
+import 'package:mini_game_manager/game_add_view.dart';
 import 'package:mini_game_manager/providers/application_settings.dart';
 import 'package:mini_game_manager/providers/game_data.dart';
-
-import 'cards.dart';
+import 'package:mini_game_manager/game_multi_view.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -62,166 +62,223 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  String file_path = "";
-  late GameData games;
   late String _searchText = "";
+  late GameData games;
+  late ApplicationSettings _appSetting;
 
-  List<Widget> buildList() {
+  GridView gridViewBuilder(double width, double height) {
     List<Widget> list = [];
     games.data.forEach((key, value) {
-      if (_searchText == "" || _searchText.isEmpty) {
-        list.add(Cards(
-          onRun: () => Process.run(value["game_path"], []),
-          imageIcon: value["game_icon"],
-          name: value["game_name"],
-          onSettings: () => openGameDetailView(
-              key, value, () => Process.run(value["game_path"], [])),
-        ));
-      } else {
-        if ((value["game_name"] as String)
-                .toLowerCase()
-                .contains(_searchText.toLowerCase()) ||
-            (value["game_tags"].toString())
-                .toLowerCase()
-                .contains(_searchText.toLowerCase())) {
-          list.add(Cards(
-            onRun: () => Process.run(value["game_path"], []),
-            imageIcon: value["game_icon"],
-            name: value["game_name"],
-            onSettings: () => openGameDetailView(
-                key, value, () => Process.run(value["game_path"], [])),
-          ));
-        }
+      if ((value["name"] as String)
+              .toLowerCase()
+              .contains(_searchText.toLowerCase()) ||
+          (value["tags"].toString())
+              .toLowerCase()
+              .contains(_searchText.toLowerCase())) {
+        list.add(
+          GameGridView(gameKey: key),
+        );
       }
     });
-    return list;
+    return GridView(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: width > 2000
+            ? 7
+            : width > 1000
+                ? 5
+                : width > 500
+                    ? 3
+                    : 1,
+        childAspectRatio: height > 500 ? 0.8 : 0.4,
+      ),
+      shrinkWrap: true,
+      children: list,
+    );
   }
 
-  openGameDetailView(
-      String reference, Map<String, dynamic> data, Function onRun) {
-    showModalBottomSheet(
-      elevation: 1,
-      // backgroundColor: const Color.fromARGB(255, 75, 75, 75),
-      isDismissible: false,
-      isScrollControlled: true,
-      context: context,
-      builder: (_) => Scaffold(
-        backgroundColor: const Color.fromARGB(255, 75, 75, 75),
-        body: GameView(
-          reference: reference,
-          currentGameData: data,
+  Widget comfyViewBuilder() {
+    List<Widget> list = [];
+    games.data.forEach((key, value) {
+      if ((value["name"] as String)
+              .toLowerCase()
+              .contains(_searchText.toLowerCase()) ||
+          (value["tags"].toString())
+              .toLowerCase()
+              .contains(_searchText.toLowerCase())) {
+        list.add(
+          GameComfyView(gameKey: key),
+        );
+      }
+    });
+    return ListView(
+      children: list,
+    );
+  }
+
+  Widget listViewBuilder() {
+    List<Widget> list = [];
+    games.data.forEach((key, value) {
+      if ((value["name"] as String)
+              .toLowerCase()
+              .contains(_searchText.toLowerCase()) ||
+          (value["tags"].toString())
+              .toLowerCase()
+              .contains(_searchText.toLowerCase())) {
+        list.add(
+          GameListView(gameKey: key),
+        );
+      }
+    });
+    return ListView(
+      children: list,
+    );
+  }
+
+  List<DropdownMenuItem<gameLibraryView>>? viewOptions() {
+    return [
+      DropdownMenuItem<gameLibraryView>(
+        value: gameLibraryView.gridView,
+        child: Row(
+          children: const [
+            Icon(Icons.grid_view_outlined),
+            Padding(padding: EdgeInsets.all(5)),
+            Text("Grid View"),
+          ],
         ),
       ),
-    );
+      DropdownMenuItem<gameLibraryView>(
+        value: gameLibraryView.comfyView,
+        child: Row(
+          children: const [
+            Icon(Icons.view_agenda_outlined),
+            Padding(padding: EdgeInsets.all(5)),
+            Text("Comfy View"),
+          ],
+        ),
+      ),
+      DropdownMenuItem<gameLibraryView>(
+        value: gameLibraryView.listView,
+        child: Row(
+          children: const [
+            Icon(Icons.table_rows_outlined),
+            Padding(padding: EdgeInsets.all(5)),
+            Text("List View"),
+          ],
+        ),
+      )
+    ];
   }
 
   @override
   Widget build(BuildContext context) {
     var width = MediaQuery.of(context).size.width;
     var height = MediaQuery.of(context).size.height;
-    var settings = Provider.of<ApplicationSettings>(context);
+    _appSetting = Provider.of<ApplicationSettings>(context);
     games = Provider.of<GameData>(context);
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.grey,
-        onPressed: () async {
-          var path = await pickFile();
-          if (path != null) games.addData(path.toString(), []);
-        },
+        backgroundColor: _appSetting.activeColorTheme.primary,
+        foregroundColor: _appSetting.activeColorTheme.primaryText,
         child: const Icon(Icons.add),
+        onPressed: () async {
+          _showMaterialDialog(context);
+        },
       ),
-      body: Stack(
+      body: Column(
         children: [
-          Column(
-            mainAxisSize: MainAxisSize.max,
+          Row(
             children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(10),
-                child: Row(
-                  children: [
-                    Form(
-                      child: Expanded(
-                        child: TextFormField(
-                          decoration: const InputDecoration(
-                            icon: Icon(Icons.search),
-                            label: Text("Search"),
-                            border: InputBorder.none,
-                          ),
-                          onChanged: (input) {
-                            setState(() {
-                              _searchText = input;
-                            });
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
               Expanded(
-                child: GridView(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: width > 2000
-                        ? 8
-                        : width > 1000
-                            ? 6
-                            : width > 500
-                                ? 4
-                                : 2,
-                    childAspectRatio: height > 500 ? 0.8 : 0.4,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
+                child: Form(
+                  child: TextFormField(
+                    decoration: const InputDecoration(
+                      icon: Icon(Icons.search),
+                      label: Text("Search"),
+                      border: InputBorder.none,
+                    ),
+                    onChanged: (input) {
+                      setState(() {
+                        _searchText = input;
+                      });
+                    },
                   ),
-                  shrinkWrap: true,
-                  children: buildList(),
                 ),
               ),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-                  color: Colors.black,
-                  child: Row(
-                    children: [
-                      // Text(
-                      //     "Game Directory: \"${settings.data["games_directory"]}\""),
-                      // TextButton(
-                      //   onPressed: () async {
-                      //     settings.setGameDirectory(await pickFolder());
-                      //   },
-                      //   child: const Text("UPDATE IT"),
-                      // ),
-                      // Text(file_path),
-                      RichText(
-                        text: TextSpan(children: [
-                          const TextSpan(
-                            text: 'Check the latest version on ',
-                            style: TextStyle(),
-                          ),
-                          TextSpan(
-                            recognizer: TapGestureRecognizer()
-                              ..onTap = () async {
-                                await launch(
-                                    "https://github.com/DamonNomadJr/mini_game_manager");
-                              },
-                            text: 'Github',
-                            style: const TextStyle(
-                              color: Colors.blue,
-                              decoration: TextDecoration.underline,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ]),
-                      )
-                    ],
+              DropdownButtonHideUnderline(
+                child: DropdownButton2<gameLibraryView>(
+                  isExpanded: false,
+                  dropdownWidth: 200,
+                  dropdownDecoration: BoxDecoration(
+                    borderRadius: const BorderRadius.only(
+                      topRight: Radius.circular(5),
+                      bottomLeft: Radius.circular(5),
+                      bottomRight: Radius.circular(5),
+                    ),
+                    color: _appSetting.activeColorTheme.backgroundAlt,
                   ),
+                  customButton: Icon(
+                    Icons.more_vert,
+                    color: _appSetting.activeColorTheme.primaryText,
+                  ),
+                  items: viewOptions(),
+                  onChanged: (val) {
+                    _appSetting.setLibraryView(val!);
+                  },
                 ),
-              )
+              ),
             ],
           ),
+          Expanded(
+            child: _appSetting.libraryView == gameLibraryView.gridView
+                ? gridViewBuilder(width, height)
+                : _appSetting.libraryView == gameLibraryView.comfyView
+                    ? comfyViewBuilder()
+                    : listViewBuilder(),
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+              color: Colors.black,
+              child: Row(
+                children: [
+                  RichText(
+                    text: TextSpan(children: [
+                      const TextSpan(
+                        text: 'Check the latest version on ',
+                        style: TextStyle(),
+                      ),
+                      TextSpan(
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () async {
+                            await launch(
+                                "https://github.com/DamonNomadJr/mini_game_manager");
+                          },
+                        text: 'Github',
+                        style: const TextStyle(
+                          color: Colors.blue,
+                          decoration: TextDecoration.underline,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ]),
+                  )
+                ],
+              ),
+            ),
+          )
         ],
       ),
+    );
+  }
+
+  void _showMaterialDialog(BuildContext context) {
+    showModalBottomSheet(
+      elevation: 1,
+      isDismissible: false,
+      isScrollControlled: true,
+      context: context,
+      builder: (_) => const GameAddView(),
     );
   }
 }
