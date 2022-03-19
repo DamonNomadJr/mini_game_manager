@@ -2,7 +2,7 @@
 <img src="https://github.com/DamonNomadJr/mini_game_manager/blob/main/.docs/mini-game-manager-logo.png" alt="mini-game-manager" width="100"/>
 
 # Mini-Game-Manager
-<img src="https://i.ibb.co/nB4Qy8g/Made-With-Flutter-1.png" alt="made-with-flutter" width="200"/>
+<img alt="GitHub issues" src="https://img.shields.io/github/issues/DamonNomadJr/mini_game_manager?style=flat-square">
 Mini Game Manager for games that don't come on your favorite platforms such as steam or origin. The focus of this app is to create a game manager that works on Windows and enables users to import games from itch.io or Patreon and manage them from one software.
 
 # Compiling it yourself
