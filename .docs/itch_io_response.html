@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+</head>
+
+<body style="background-color: #1A1A1A; ">
+    <div style="
+        text-align: center;
+        position: absolute;
+        width: 600;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);">
+        <center>
+            <img src="https://github.com/DamonNomadJr/mini_game_manager/blob/main/.docs/mini-game-manager-logo.png">
+        </center>
+        <h1 style="color: #FFFFFF;">
+            Your Access Token:
+        </h1>
+        <p id="access_token"
+            style="color: #FFFFFF; padding: 10px; background-color: #2A2B2A; font-weight: bold; font-size: 20px;"></p>
+        <p id="access_token" style="color: #FFFFFF;">
+            Copy your access token in the alert box in the application for it to register you.
+        </p>
+    </div>
+</body>
+<script>
+    var queryString = window.location.hash.slice(1);
+    var params = new URLSearchParams(queryString);
+    var accessToken = params.get("access_token");
+    document.getElementById("access_token").innerHTML = accessToken;
+</script>
+
+</html>
