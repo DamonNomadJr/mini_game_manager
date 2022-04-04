@@ -3,6 +3,9 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  desktop_drop
+  flutter_window_close
+  system_tray
   url_launcher_windows
   window_size
 )

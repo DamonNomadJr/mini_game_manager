@@ -152,14 +152,14 @@ class CustomSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(bottom: 5),
+          padding: const EdgeInsets.only(bottom: 10),
           child: Text(
             title,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
           ),
         ),
         Padding(
-          padding: const EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.only(bottom: 30),
           child: child,
         ),
       ],
@@ -275,6 +275,149 @@ class GameRunnerAddCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class CustomInfoBox extends StatelessWidget {
+  String title;
+  String subTitltle;
+  IconData leadingIcon;
+  double? height;
+  Color? color;
+  Color? titleColor;
+  Color? textColor;
+  EdgeInsets? padding;
+  EdgeInsets? margin;
+
+  CustomInfoBox({
+    Key? key,
+    required this.title,
+    required this.subTitltle,
+    required this.leadingIcon,
+    this.height,
+    this.color,
+    this.titleColor,
+    this.textColor,
+    this.padding,
+    this.margin,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    var _appSetting = Provider.of<ApplicationSettings>(context);
+    return Container(
+      alignment: Alignment.topCenter,
+      padding: padding ?? const EdgeInsets.fromLTRB(20, 10, 30, 10),
+      margin: margin ?? const EdgeInsets.only(right: 10),
+      decoration: BoxDecoration(
+        color: _appSetting.activeColorTheme.primaryText.shade50,
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 5, right: 10.0),
+            child: Icon(
+              leadingIcon,
+              color: _appSetting.activeColorTheme.primaryText.shade700,
+            ),
+          ),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: _appSetting.activeColorTheme.primaryText.shade700,
+                ),
+              ),
+              Text(
+                subTitltle,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: _appSetting.activeColorTheme.primaryText,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class CustomRunnerInfoBox extends StatelessWidget {
+  String title;
+  bool isMain;
+  Color? color;
+  Color? titleColor;
+  Color? textColor;
+  EdgeInsets? padding;
+  EdgeInsets? margin;
+
+  CustomRunnerInfoBox({
+    Key? key,
+    required this.title,
+    this.isMain = false,
+    this.color,
+    this.titleColor,
+    this.textColor,
+    this.padding,
+    this.margin,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    var _appSetting = Provider.of<ApplicationSettings>(context);
+    return Stack(
+      children: [
+        Container(
+          width: 200,
+          alignment: Alignment.topCenter,
+          margin: margin ?? const EdgeInsets.only(right: 10),
+          decoration: BoxDecoration(
+            color: _appSetting.activeColorTheme.secondaryAlt.shade400,
+            borderRadius: BorderRadius.circular(5),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(5),
+            onTap: () {},
+            child: Padding(
+              padding: padding ?? const EdgeInsets.fromLTRB(25, 10, 15, 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: _appSetting.activeColorTheme.primaryText.shade700,
+                    ),
+                  ),
+                  Icon(
+                    Icons.play_arrow,
+                    color: _appSetting.activeColorTheme.primaryText.shade700,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          top: 0,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(10000),
+            onTap: () {},
+            child: Icon(isMain ? Icons.bookmark : Icons.bookmark_add_outlined),
+          ),
+        ),
+      ],
     );
   }
 }

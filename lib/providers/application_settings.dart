@@ -20,6 +20,7 @@ class ApplicationSettings with ChangeNotifier {
 
   Map<String, ColorPallet> colorThemes = {
     "Default": DefaultColorPallet(),
+    "Secondary": SecondColorPallet(),
   };
 
   ColorPallet activeColorTheme = DefaultColorPallet();
@@ -46,6 +47,11 @@ class ApplicationSettings with ChangeNotifier {
       await loadSettings();
     }
     getLibraryView();
+  }
+
+  setColorTheme(String key) {
+    activeColorTheme = colorThemes[key] ?? DefaultColorPallet();
+    notifyListeners();
   }
 
   void saveSettings() async {

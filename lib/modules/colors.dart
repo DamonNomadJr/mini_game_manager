@@ -124,3 +124,117 @@ class DefaultColorPallet implements ColorPallet {
     900: Color(0xE6EEEEEE),
   });
 }
+
+class SecondColorPallet implements ColorPallet {
+  @override
+  MaterialColor background = const MaterialColor(0xFF023047, <int, Color>{
+    50: Color(0x0D023047),
+    100: Color(0x0230471A),
+    200: Color(0x33023047),
+    300: Color(0x4D023047),
+    400: Color(0x66023047),
+    500: Color(0x80023047),
+    600: Color(0x99023047),
+    700: Color(0xB3023047),
+    800: Color(0xCC023047),
+    900: Color(0xE6023047),
+  });
+
+  @override
+  MaterialColor backgroundAlt = const MaterialColor(0xFF035177, <int, Color>{
+    50: Color(0x0D035177),
+    100: Color(0x1A035177),
+    200: Color(0x33035177),
+    300: Color(0x4D035177),
+    400: Color(0x66035177),
+    500: Color(0x80035177),
+    600: Color(0x99035177),
+    700: Color(0xB3035177),
+    800: Color(0xCC035177),
+    900: Color(0xE6035177),
+  });
+
+  @override
+  MaterialColor primary = const MaterialColor(0xFFFB8500, <int, Color>{
+    50: Color(0x0DFB8500),
+    100: Color(0x1AFB8500),
+    200: Color(0x33FB8500),
+    300: Color(0x4DFB8500),
+    400: Color(0x66FB8500),
+    500: Color(0x80FB8500),
+    600: Color(0x99FB8500),
+    700: Color(0xB3FB8500),
+    800: Color(0xCCFB8500),
+    900: Color(0xE6FB8500),
+  });
+
+  @override
+  MaterialColor primaryAlt = const MaterialColor(0xFFC73E1D, <int, Color>{
+    50: Color(0x0DC73E1D),
+    100: Color(0x1AC73E1D),
+    200: Color(0x33C73E1D),
+    300: Color(0x4DC73E1D),
+    400: Color(0x66C73E1D),
+    500: Color(0x80C73E1D),
+    600: Color(0x99C73E1D),
+    700: Color(0xB3C73E1D),
+    800: Color(0xCCC73E1D),
+    900: Color(0xE6C73E1D),
+  });
+
+  @override
+  MaterialColor primaryText = const MaterialColor(0xFFFFFFFF, <int, Color>{
+    50: Color(0x0DFFFFFF),
+    100: Color(0x1AFFFFFF),
+    200: Color(0x33FFFFFF),
+    300: Color(0x4DFFFFFF),
+    400: Color(0x66FFFFFF),
+    500: Color(0x80FFFFFF),
+    600: Color(0x99FFFFFF),
+    700: Color(0xB3FFFFFF),
+    800: Color(0xCCFFFFFF),
+    900: Color(0xE6FFFFFF),
+  });
+
+  @override
+  MaterialColor secondary = const MaterialColor(0xFFFFB703, <int, Color>{
+    50: Color(0x0DFFB703),
+    100: Color(0x1AFFB703),
+    200: Color(0x33FFB703),
+    300: Color(0x4DFFB703),
+    400: Color(0x66FFB703),
+    500: Color(0x80FFB703),
+    600: Color(0x99FFB703),
+    700: Color(0xB3FFB703),
+    800: Color(0xCCFFB703),
+    900: Color(0xE6FFB703),
+  });
+
+  @override
+  MaterialColor secondaryAlt = const MaterialColor(0xFF9E2A2B, <int, Color>{
+    50: Color(0x0D9E2A2B),
+    100: Color(0x1A9E2A2B),
+    200: Color(0x339E2A2B),
+    300: Color(0x4D9E2A2B),
+    400: Color(0x669E2A2B),
+    500: Color(0x809E2A2B),
+    600: Color(0x999E2A2B),
+    700: Color(0xB39E2A2B),
+    800: Color(0xCC9E2A2B),
+    900: Color(0xE69E2A2B),
+  });
+
+  @override
+  MaterialColor secondaryText = const MaterialColor(0xFFE0A100, <int, Color>{
+    50: Color(0x0DE0A100),
+    100: Color(0x1AE0A100),
+    200: Color(0x33E0A100),
+    300: Color(0x4DE0A100),
+    400: Color(0x66E0A100),
+    500: Color(0x80E0A100),
+    600: Color(0x99E0A100),
+    700: Color(0xB3E0A100),
+    800: Color(0xCCE0A100),
+    900: Color(0xE6E0A100),
+  });
+}

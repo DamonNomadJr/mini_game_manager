@@ -5,100 +5,221 @@ import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class GameData with ChangeNotifier {
-  Map<String, dynamic> data = {};
-  Map<String, dynamic> categories = {};
+  List<Game> _games = [];
 
-  final String _dataFileName = "games_list";
-  final String _categoryFileName = "games_list";
+  final String _fileName = "gamesList";
 
   late final SharedPreferences _prefs;
 
   init() async {
     _prefs = await SharedPreferences.getInstance();
-    data = await loadPreference(_dataFileName);
-    categories = await loadPreference(_categoryFileName);
+    await load();
   }
 
-  Future<void> addNewCategory(String categoryName) async {
-    Map<String, List<String>> newCat = {categoryName: []};
-    categories.containsKey(categoryName)
-        ? null
-        : categories.addEntries(newCat.entries);
-    await savePreference(_categoryFileName, categories);
-    print("Category $categoryName was created");
-    notifyListeners();
+  bool gameExist(String gameHash) {
+    return _games.indexWhere((element) => element.hash == gameHash) > -1;
   }
 
-  Future<void> removeCategory(categoryName) async {
-    categories.removeWhere((key, value) => key == categoryName);
-    await savePreference(_categoryFileName, categories);
-    print("Category $categories was updated and removed $categoryName");
-    notifyListeners();
+  List<Game> getAllGames() {
+    return _games;
   }
 
-  addGameToCategory(String categoryName, String gameHash) async {
-    if (!categories.containsKey(categoryName)) {
-      await addNewCategory(categoryName);
-    }
-    categories.entries.where((element) {
-      if (element.key == categoryName) {
-        element.value.add(gameHash);
-      }
-      return true;
-    });
-    print("$categories");
-    notifyListeners();
-  }
-
-  void addGameToLibrary({
-    required String gameName,
-    String gameBackogundImage =
-        "https://cdn-www.playstationlifestyle.net/assets/uploads/2019/03/PlayStation-Plus-Value-Change-free-games.png",
-    required String mainRunner,
-    required List<String> tags,
-    required List<Map<String, String>> runners,
+  Future<bool> updateGame(
+    String gameHash, {
+    String? name,
+    List<String>? tags,
+    String? background,
+    String? note,
   }) async {
-    int hash = gameName.hashCode;
-    Map<String, dynamic> entry = {
-      "$hash": {
-        "name": gameName,
-        "backgroundImage": gameBackogundImage,
-        "main_runner": mainRunner,
-        "tags": tags,
-        "runner_lists": runners,
-      },
-    };
-    data.containsKey(hash) ? null : data.addEntries(entry.entries);
-    await savePreference(_dataFileName, data);
-    notifyListeners();
-  }
-
-  Future<void> updateGameinLibrary(
-    String hash,
-    Map<String, dynamic> updates,
-  ) async {
-    data.update(hash, (value) => updates);
-    await savePreference(_dataFileName, data);
-    notifyListeners();
-  }
-
-  Future<void> removeGameFromLibrary(String hash) async {
-    data.remove(hash);
-    await savePreference(_dataFileName, data);
-    notifyListeners();
-  }
-
-  Future<bool> savePreference(
-      String fileName, Map<dynamic, dynamic> mapData) async {
-    return await _prefs.setString(fileName, json.encode(data));
-  }
-
-  Future<Map<String, dynamic>> loadPreference(String fileName) async {
-    String? prefData = _prefs.getString(fileName);
-    if (prefData != null) {
-      return json.decode(prefData);
+    if (gameExist(gameHash)) {
+      Game item = getGameByHash(gameHash)!;
+      item.name = name ?? item.name;
+      item.hash = item.name.hashCode.toString();
+      if (tags != null) {
+        for (var tag in tags) {
+          if (!item.tags.contains(tag)) {
+            item.tags.add(tag);
+          }
+        }
+      }
+      item.background = background ?? item.background;
+      item.note = note ?? item.note;
+      await save();
+      notifyListeners();
+      return true;
     } else {
-      return {};
+      return false;
     }
+  }
+
+  Future<bool> removeGame(
+    String gameHash, {
+    String? name,
+    List<String>? tags,
+    String? background,
+    String? note,
+  }) async {
+    if (gameExist(gameHash)) {
+      _games.remove(getGameByHash(gameHash)!);
+      await save();
+      notifyListeners();
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  Future<bool> addGameToLibrary({
+    required String name,
+    required String background,
+    required List<String> tags,
+    required List<String> category,
+    required String note,
+  }) async {
+    if (!gameExist(name.hashCode.toString())) {
+      _games.add(Game(
+        hash: name.hashCode.toString(),
+        name: name,
+        background: background,
+        tags: tags,
+        category: category,
+        note: note,
+      ));
+      await save();
+      notifyListeners();
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  Game? getGameByHash(String gameHash) {
+    try {
+      Game item = _games.firstWhere((element) => element.hash == gameHash);
+      return item;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  int length() {
+    return _games.length;
+  }
+
+  @override
+  String toString() {
+    return _games.toString();
+  }
+
+  Future<bool> save() async {
+    List _categoriesList = [];
+    for (var item in _games) {
+      _categoriesList.add(item.toJson());
+    }
+    return await _prefs.setString(
+        _fileName, json.encode({_fileName: _categoriesList}));
+  }
+
+  Future<void> load() async {
+    String? prefData = _prefs.getString(_fileName);
+    if (prefData != null) {
+      var data = json.decode(prefData);
+      for (String item in data[_fileName]) {
+        _games.add(Game.fromJson(json.decode(item)));
+      }
+      notifyListeners();
+    }
+  }
+
+  Future<GameRunners?> getRunners(String gameHash) async {
+    String? prefData = _prefs.getString(gameHash);
+    if (prefData != null) {
+      var data = json.decode(prefData);
+      var returnArg = GameRunners.fromJson(json.decode(data[_fileName]));
+      notifyListeners();
+      return returnArg;
+    }
+    return null;
+  }
+
+  Future<void> setRunners(String gameHash, GameRunners gameRunners) async {
+    await _prefs.setString(gameHash, json.encode(gameRunners.toJson()));
+    notifyListeners();
+  }
+}
+
+class Game {
+  String hash;
+  String name;
+  String background;
+  List<String> tags;
+  List<String> category;
+  String note;
+
+  Game({
+    required this.hash,
+    required this.name,
+    required this.background,
+    required this.tags,
+    required this.category,
+    required this.note,
+  });
+
+  factory Game.fromJson(Map<String, dynamic> json) {
+    return Game(
+      hash: json["hash"],
+      name: json["name"],
+      background: json["background"],
+      tags: List<String>.from(json["tags"] ?? []),
+      category: List<String>.from(json["category"] ?? []),
+      note: json["note"],
+    );
+  }
+
+  @override
+  String toString() {
+    return "$name[$hash] # $tags";
+  }
+
+  String toJson() {
+    return json.encode({
+      "hash": hash,
+      "name": name,
+      "background": background,
+      "tags": tags,
+      "note": note,
+    });
+  }
+}
+
+class GameRunners {
+  String hash;
+  String mainRunner;
+  List<Map<String, List<String>>> runnerList;
+  GameRunners({
+    required this.hash,
+    required this.mainRunner,
+    required this.runnerList,
+  });
+
+  factory GameRunners.fromJson(Map<String, dynamic> json) {
+    return GameRunners(
+      hash: json["hash"],
+      mainRunner: json["mainRunner"],
+      runnerList:
+          List<Map<String, List<String>>>.from(json["runnerList"] ?? []),
+    );
+  }
+
+  @override
+  String toString() {
+    return "$hash: $runnerList";
+  }
+
+  String toJson() {
+    return json.encode({
+      "hash": hash,
+      "runnerList": runnerList,
+    });
   }
 }

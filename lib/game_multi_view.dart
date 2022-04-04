@@ -1,15 +1,14 @@
 // ignore_for_file: must_be_immutable
 
-import 'dart:io';
-
-import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:mini_game_manager/games_pages/game_edit_page.dart';
 import 'package:mini_game_manager/modules/custom_widgets.dart';
 import 'package:mini_game_manager/providers/application_settings.dart';
 import 'package:mini_game_manager/providers/game_data.dart';
 import 'package:provider/provider.dart';
 
-import 'game_view.dart';
+import 'package:mini_game_manager/game_view.dart';
 
 final List<String> _dropDownItems = [
   'Run game',
@@ -17,71 +16,222 @@ final List<String> _dropDownItems = [
   'Remove Game',
 ];
 
-dropDownAction(context, value, gameData, gameKey) {
+dropDownAction(
+  value,
+  Function removeFunction,
+) {
   int index = _dropDownItems.indexOf(value);
   if (index == 0) {
-    runGame(gameData, gameKey);
+    print("To be implemented");
   } else if (index == 1) {
-    openGameDetails(context, gameKey);
+    print("To be implemented");
   } else if (index == 2) {
-    removeGame(gameData, gameKey);
+    removeFunction();
   }
 }
 
-openGameDetailView(BuildContext context, String reference) {
+openGameDetailView(BuildContext context, String gameHash) {
   showModalBottomSheet(
     elevation: 1,
     isDismissible: false,
     isScrollControlled: true,
     context: context,
     builder: (_) => GameView(
-      reference: reference,
+      gameHash: gameHash,
     ),
   );
 }
 
-runGame(GameData gameData, String gameKey) async => await Process.run(
-      gameData.data[gameKey]["main_runner"],
-      [],
-    );
-
-openGameDetails(context, gameKey) async => openGameDetailView(context, gameKey);
-
-removeGame(GameData gameData, String key) =>
-    gameData.removeGameFromLibrary(key);
-
-class GameGridView extends StatelessWidget {
-  final String gameKey;
+class GamesMultiView extends StatelessWidget {
+  final String title;
+  final List<Game> games;
   late ApplicationSettings _appSetting;
-  late GameData _gameData;
 
-  GameGridView({
+  GamesMultiView({
     Key? key,
-    required this.gameKey,
+    required this.title,
+    required this.games,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     _appSetting = Provider.of<ApplicationSettings>(context);
-    _gameData = Provider.of<GameData>(context);
+    if (games.isNotEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(10),
+        child: CustomSection(
+          title: title.isEmpty ? "All Your Games" : title,
+          child: viewBuilder(context),
+        ),
+      );
+    }
+
+    return Container(
+      alignment: Alignment.center,
+      child: Text(
+        "No games were found",
+        style: TextStyle(
+          fontSize: 20,
+          color: _appSetting.activeColorTheme.primaryText.shade500,
+        ),
+      ),
+    );
+  }
+
+  Widget viewBuilder(BuildContext context) {
+    if (_appSetting.libraryView == gameLibraryView.listView) {
+      return ListView.builder(
+        shrinkWrap: true,
+        controller: ScrollController(),
+        itemCount: games.length,
+        itemBuilder: (BuildContext context, index) {
+          return GameListView(game: games[index], remove: () {});
+        },
+      );
+    } else if (_appSetting.libraryView == gameLibraryView.comfyView) {
+      return ListView.builder(
+        shrinkWrap: true,
+        controller: ScrollController(),
+        itemCount: games.length,
+        itemBuilder: (BuildContext context, index) {
+          return GameComfyView(game: games[index], remove: () {});
+        },
+      );
+    } else {
+      return GridView.builder(
+        shrinkWrap: true,
+        controller: ScrollController(),
+        itemCount: games.length,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: MediaQuery.of(context).size.width > 900 ? 7 : 3,
+          childAspectRatio: 0.8,
+        ),
+        itemBuilder: (BuildContext context, index) {
+          return GameGridView(
+              game: games[index],
+              dropDownWidget: _DropDowns(
+                runGame: () {},
+                removeGame: () {},
+                openGameDetails: () {},
+              ));
+        },
+      );
+    }
+  }
+}
+
+class _DropDowns extends StatelessWidget {
+  final Function runGame;
+  final Function openGameDetails;
+  final Function removeGame;
+  _DropDowns(
+      {Key? key,
+      required this.runGame,
+      required this.openGameDetails,
+      required this.removeGame})
+      : super(key: key);
+
+  final List<String> _dropDownItems = [
+    'Run game',
+    'Edit Details',
+    'Remove Game',
+  ];
+
+  dropDownAction(value) {
+    int index = _dropDownItems.indexOf(value);
+    if (index == 0) {
+      runGame();
+    } else if (index == 1) {
+      openGameDetails();
+    } else if (index == 2) {
+      removeGame();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var _appSetting = Provider.of<ApplicationSettings>(context);
+    return DropdownButtonHideUnderline(
+      child: DropdownButton2(
+        isExpanded: false,
+        dropdownWidth: 200,
+        dropdownDecoration: BoxDecoration(
+          borderRadius: const BorderRadius.only(
+            topRight: Radius.circular(5),
+            bottomLeft: Radius.circular(5),
+            bottomRight: Radius.circular(5),
+          ),
+          color: _appSetting.activeColorTheme.backgroundAlt,
+        ),
+        customButton: Container(
+          decoration: BoxDecoration(
+            color: _appSetting.activeColorTheme.primaryText.shade200,
+            borderRadius:
+                const BorderRadius.only(bottomRight: Radius.circular(10)),
+          ),
+          padding: const EdgeInsets.all(5.0),
+          child: Icon(
+            Icons.more_vert,
+            color: _appSetting.activeColorTheme.primaryText,
+          ),
+        ),
+        items: _dropDownItems
+            .map((item) => DropdownMenuItem<String>(
+                  value: item,
+                  child: Text(
+                    item,
+                    style: TextStyle(
+                      color: _appSetting.activeColorTheme.primaryText,
+                    ),
+                    overflow: TextOverflow.fade,
+                  ),
+                ))
+            .toList(),
+        onChanged: (value) => dropDownAction(value),
+      ),
+    );
+  }
+}
+
+class GameGridView extends StatelessWidget {
+  final Game game;
+  _DropDowns dropDownWidget;
+  late ApplicationSettings _appSetting;
+
+  GameGridView({
+    Key? key,
+    required this.game,
+    required this.dropDownWidget,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    _appSetting = Provider.of<ApplicationSettings>(context);
 
     return Container(
       padding: const EdgeInsets.all(10),
       height: 300,
       child: InkWell(
-        onTap: () => openGameDetails(context, gameKey),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (BuildContext context) => GameEditPage(
+              gameHash: game.hash,
+            ),
+          ),
+        ),
         child: Stack(
           children: [
-            if (_gameData.data[gameKey]["backgroundImage"] != null)
-              SizedBox(
-                width: double.infinity,
-                height: double.infinity,
-                child: Image.network(
-                  _gameData.data[gameKey]["backgroundImage"],
-                  alignment: Alignment.center,
-                  fit: BoxFit.cover,
-                ),
+            SizedBox(
+              width: double.infinity,
+              height: double.infinity,
+              child: Image.network(
+                game.background,
+                alignment: Alignment.center,
+                fit: BoxFit.cover,
               ),
+            ),
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -94,46 +244,8 @@ class GameGridView extends StatelessWidget {
                 ),
               ),
             ),
-            DropdownButtonHideUnderline(
-              child: DropdownButton2(
-                isExpanded: false,
-                dropdownWidth: 200,
-                dropdownDecoration: BoxDecoration(
-                  borderRadius: const BorderRadius.only(
-                    topRight: Radius.circular(5),
-                    bottomLeft: Radius.circular(5),
-                    bottomRight: Radius.circular(5),
-                  ),
-                  color: _appSetting.activeColorTheme.backgroundAlt,
-                ),
-                customButton: Container(
-                  decoration: BoxDecoration(
-                    color: _appSetting.activeColorTheme.primaryText.shade200,
-                    borderRadius: const BorderRadius.only(
-                        bottomRight: Radius.circular(10)),
-                  ),
-                  padding: const EdgeInsets.all(5.0),
-                  child: Icon(
-                    Icons.more_vert,
-                    color: _appSetting.activeColorTheme.primaryText,
-                  ),
-                ),
-                items: _dropDownItems
-                    .map((item) => DropdownMenuItem<String>(
-                          value: item,
-                          child: Text(
-                            item,
-                            style: TextStyle(
-                              color: _appSetting.activeColorTheme.primaryText,
-                            ),
-                            overflow: TextOverflow.fade,
-                          ),
-                        ))
-                    .toList(),
-                onChanged: (value) =>
-                    dropDownAction(context, value, _gameData, gameKey),
-              ),
-            ),
+            // NOTE Drop down widget
+            dropDownWidget,
             Container(
               padding: const EdgeInsets.only(left: 10, right: 10, bottom: 10),
               alignment: Alignment.bottomCenter,
@@ -142,7 +254,7 @@ class GameGridView extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      _gameData.data[gameKey]["name"],
+                      game.name,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 18,
@@ -154,7 +266,10 @@ class GameGridView extends StatelessWidget {
                     padding: EdgeInsets.all(5),
                     color: Colors.transparent,
                     boxShadow: const [],
-                    onClick: () => runGame(_gameData, gameKey),
+                    // TODO
+                    onClick: () {
+                      // runGame(_gameData, "gameKey");
+                    },
                     child: const Icon(Icons.play_arrow),
                   ),
                 ],
@@ -168,120 +283,123 @@ class GameGridView extends StatelessWidget {
 }
 
 class GameListView extends StatelessWidget {
-  final String gameKey;
+  final Game game;
+  final Function remove;
   late ApplicationSettings _appSetting;
-  late GameData _gameData;
   GameListView({
     Key? key,
-    required this.gameKey,
+    required this.game,
+    required this.remove,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     _appSetting = Provider.of<ApplicationSettings>(context);
-    _gameData = Provider.of<GameData>(context);
     return ListTile(
-        contentPadding: const EdgeInsets.symmetric(vertical: 5, horizontal: 30),
-        leading: SizedBox(
-          width: 100,
-          height: double.infinity,
-          child: Stack(
-            children: [
-              SizedBox(
-                width: 100,
-                child: Image.network(
-                  _gameData.data[gameKey]["backgroundImage"],
-                  fit: BoxFit.cover,
-                ),
+      contentPadding: const EdgeInsets.symmetric(vertical: 5, horizontal: 30),
+      leading: SizedBox(
+        width: 100,
+        height: double.infinity,
+        child: Stack(
+          children: [
+            SizedBox(
+              width: 100,
+              child: Image.network(
+                game.background,
+                fit: BoxFit.cover,
               ),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton2(
-                    isExpanded: false,
-                    dropdownWidth: 200,
-                    dropdownDecoration: BoxDecoration(
-                      borderRadius: const BorderRadius.only(
-                        topRight: Radius.circular(5),
-                        bottomLeft: Radius.circular(5),
-                        bottomRight: Radius.circular(5),
-                      ),
-                      color: _appSetting.activeColorTheme.backgroundAlt,
-                    ),
-                    customButton: Container(
-                      alignment: Alignment.centerLeft,
-                      height: double.infinity,
-                      decoration: BoxDecoration(
-                        color:
-                            _appSetting.activeColorTheme.primaryText.shade200,
-                      ),
-                      padding: const EdgeInsets.all(5.0),
-                      child: Icon(
-                        Icons.more_vert,
-                        color: _appSetting.activeColorTheme.primaryText,
-                      ),
-                    ),
-                    items: _dropDownItems
-                        .map((item) => DropdownMenuItem<String>(
-                              value: item,
-                              child: Text(
-                                item,
-                                style: TextStyle(
-                                  color:
-                                      _appSetting.activeColorTheme.primaryText,
-                                ),
-                                overflow: TextOverflow.fade,
-                              ),
-                            ))
-                        .toList(),
-                    onChanged: (value) =>
-                        dropDownAction(context, value, _gameData, gameKey),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        title: Text(
-          _gameData.data[gameKey]["name"],
-          style: const TextStyle(
-            fontSize: 20,
-          ),
-        ),
-        trailing: CustomButton(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                Icon(Icons.play_arrow),
-                Padding(padding: EdgeInsets.all(5)),
-                Text("Run Game"),
-              ],
             ),
-            color: _appSetting.activeColorTheme.primary,
-            onClick: () async => runGame(_gameData, gameKey)),
-        onTap: () => openGameDetails(context, gameKey));
+            Align(
+              alignment: Alignment.centerLeft,
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton2(
+                  isExpanded: false,
+                  dropdownWidth: 200,
+                  dropdownDecoration: BoxDecoration(
+                    borderRadius: const BorderRadius.only(
+                      topRight: Radius.circular(5),
+                      bottomLeft: Radius.circular(5),
+                      bottomRight: Radius.circular(5),
+                    ),
+                    color: _appSetting.activeColorTheme.backgroundAlt,
+                  ),
+                  customButton: Container(
+                    alignment: Alignment.centerLeft,
+                    height: double.infinity,
+                    decoration: BoxDecoration(
+                      color: _appSetting.activeColorTheme.primaryText.shade200,
+                    ),
+                    padding: const EdgeInsets.all(5.0),
+                    child: Icon(
+                      Icons.more_vert,
+                      color: _appSetting.activeColorTheme.primaryText,
+                    ),
+                  ),
+                  items: _dropDownItems
+                      .map((item) => DropdownMenuItem<String>(
+                            value: item,
+                            child: Text(
+                              item,
+                              style: TextStyle(
+                                color: _appSetting.activeColorTheme.primaryText,
+                              ),
+                              overflow: TextOverflow.fade,
+                            ),
+                          ))
+                      .toList(),
+                  onChanged: (value) => dropDownAction(value, remove),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      title: Text(
+        game.name,
+        style: const TextStyle(
+          fontSize: 20,
+        ),
+      ),
+      trailing: CustomButton(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.play_arrow),
+            Padding(padding: EdgeInsets.all(5)),
+            Text("Run Game"),
+          ],
+        ),
+        color: _appSetting.activeColorTheme.primary,
+        // TODO run game
+        onClick: () async {
+          // runGame(_gameData, gameKey);
+        },
+      ),
+      onTap: () => openGameDetailView(context, game.hash),
+    );
   }
 }
 
 class GameComfyView extends StatelessWidget {
-  final String gameKey;
+  final Game game;
+  final Function remove;
   late ApplicationSettings _appSetting;
-  late GameData _gameData;
 
   GameComfyView({
     Key? key,
-    required this.gameKey,
+    required this.game,
+    required this.remove,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     _appSetting = Provider.of<ApplicationSettings>(context);
-    _gameData = Provider.of<GameData>(context);
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: InkWell(
-        onTap: () => openGameDetails(context, gameKey),
+        onTap: () => openGameDetailView(context, game.hash),
         child: Container(
           height: 150,
           padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 0),
@@ -293,7 +411,7 @@ class GameComfyView extends StatelessWidget {
                     width: 200,
                     height: double.infinity,
                     child: Image.network(
-                      _gameData.data[gameKey]["backgroundImage"],
+                      game.background,
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -348,8 +466,7 @@ class GameComfyView extends StatelessWidget {
                                 ),
                               ))
                           .toList(),
-                      onChanged: (value) =>
-                          dropDownAction(context, value, _gameData, gameKey),
+                      onChanged: (value) => dropDownAction(value, remove),
                     ),
                   ),
                 ],
@@ -361,13 +478,13 @@ class GameComfyView extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _gameData.data[gameKey]["name"],
+                        game.name,
                         style: const TextStyle(
                           fontSize: 20,
                         ),
                       ),
                       Text(
-                        _gameData.data[gameKey]["note"] ?? "You have no notes",
+                        game.note.length < 1 ? "You have no notes" : game.note,
                       ),
                     ],
                   ),
@@ -385,7 +502,9 @@ class GameComfyView extends StatelessWidget {
                       Text("Run Game"),
                     ],
                   ),
-                  onClick: () => runGame(_gameData, gameKey),
+                  onClick: () {
+                    // RunGame(_gameData, gameKey);
+                  },
                 ),
               )
             ],

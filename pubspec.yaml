@@ -22,6 +22,15 @@ dependencies:
   url_launcher: ^6.0.20
   dropdown_button2: ^1.2.2
   flutter_typeahead: ^3.2.4
+  system_tray: ^0.1.0
+  flutter_window_close: ^0.2.1
+  http: ^0.13.4
+  floating_action_bubble: ^1.1.4
+  font_awesome_flutter: ^10.0.0
+  package_info_plus: ^1.4.0
+  web_browser: ^0.5.0
+  desktop_drop: ^0.3.3
+
 
 dev_dependencies:
   flutter_test:
@@ -30,3 +39,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/image/

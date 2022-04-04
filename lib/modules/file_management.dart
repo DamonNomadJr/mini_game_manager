@@ -1,5 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 
+List<String> acceptedCompressed = ['.zip', '.rar', '.7z'];
+
 Future<String?> pickFile() async {
   var result = await FilePicker.platform.pickFiles(
     dialogTitle: "Select a game to add",

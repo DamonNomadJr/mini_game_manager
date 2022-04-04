@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -10,15 +8,15 @@ import 'package:provider/provider.dart';
 
 // ignore: must_be_immutable
 class GameView extends StatefulWidget {
-  String reference;
-  GameView({Key? key, required this.reference}) : super(key: key);
+  String gameHash;
+  GameView({Key? key, required this.gameHash}) : super(key: key);
 
   @override
   State<GameView> createState() => _GameViewState();
 }
 
 class _GameViewState extends State<GameView> {
-  late Map<String, dynamic> currentGame;
+  late Game currentGame;
   late ApplicationSettings _appSetting;
   bool _toExpand = true;
 
@@ -42,7 +40,7 @@ class _GameViewState extends State<GameView> {
   List<Widget> tagListBuilder() {
     List<Widget> itemList = [];
 
-    for (var item in currentGame["tags"]) {
+    for (var item in currentGame.tags) {
       itemList.add(
         Padding(
           padding: const EdgeInsets.only(right: 5, bottom: 5),
@@ -60,23 +58,21 @@ class _GameViewState extends State<GameView> {
   @override
   Widget build(BuildContext context) {
     _appSetting = Provider.of<ApplicationSettings>(context);
-    currentGame = (Provider.of<GameData>(context)).data[widget.reference];
+    currentGame =
+        (Provider.of<GameData>(context)).getGameByHash(widget.gameHash)!;
     return Scaffold(
       backgroundColor: _appSetting.activeColorTheme.background,
       body: Column(
         children: [
           CustomSliver(
-            title: currentGame["name"],
+            title: currentGame.name,
             expanded: _toExpand,
-            backgroundUrl: currentGame["backgroundImage"],
+            backgroundUrl: currentGame.background,
             bottomChildren: Row(
               children: [
                 CustomButton(
                   color: _appSetting.activeColorTheme.primary,
-                  onClick: () async => await Process.run(
-                    currentGame["main_runner"],
-                    [],
-                  ),
+                  onClick: () {},
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: const [
@@ -124,9 +120,9 @@ class _GameViewState extends State<GameView> {
                       children: [
                         CustomSection(
                           title: "Your notes",
-                          child: currentGame.containsKey("notes")
-                              ? Text(currentGame["notes"])
-                              : const Text("You have no notes"),
+                          child: currentGame.note.isEmpty
+                              ? const Text("You have no notes")
+                              : Text(currentGame.note),
                         ),
                         CustomSection(
                           title: "Tags",
